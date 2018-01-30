@@ -29,6 +29,7 @@ dependencies:
 - shapely
 - six
 #- scientificpython
+- r-essentials
 
 # Old Iris and ncl dependency block. Simply using the top level packages should be enough now.
 # iris
