@@ -33,6 +33,7 @@ input_files_per_var <- yaml::read_yaml(params$input_files)
 var_names <- names(input_files_per_var)
 input_files <- lapply(var_names, function(x) names(input_files_per_var[[x]]))
 names(input_files) <- var_names
+model_names <- lapply(input_files_per_var, function(x) unname(sapply(x, '[[', 'model')))
 
 ## Do not print warnings
 #options(warn=-1)
@@ -71,10 +72,11 @@ library(s2dverification)
 library(startR)
 library(ggplot2)
 source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-MagicWP5/R/AnoAgree.R')
+source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-Magic_WP6/R/WeightedMean.R')
 source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-debug-plot-ts/R/PlotTimeSeries.R')
 
 fullpath_filenames <- input_files[[var0]]
-historical_data <- Start(dat = fullpath_filenames,
+historical_data <- Start(model = fullpath_filenames,
                          var = var0,
                          var_var = 'var_names',
                          #  sdate = paste0(seq(1970, 2000, by = 1), "0101"),
@@ -83,97 +85,128 @@ historical_data <- Start(dat = fullpath_filenames,
                          lon = values(list(lon.min, lon.max)),
                          lon_var = 'lon',
                          lon_reorder = CircularSort(0, 360),
-                         return_vars = list(time = 'dat', lon = 'dat', lat = 'dat'),
+                         return_vars = list(time = 'model', lon = 'model', lat = 'model'),
+                         retrieve = FALSE)
+
+forecast_time <- attr(historical_data, 'Variables')$dat1$time
+time_1 <- which(substr(forecast_time, 1, 7) == substr(start_historical, 1, 7))
+time_2 <- which(substr(forecast_time, 1, 7) == substr(end_historical, 1, 7))
+
+historical_data <- Start(model = fullpath_filenames,
+                         var = var0,
+                         var_var = 'var_names',
+                         #  sdate = paste0(seq(1970, 2000, by = 1), "0101"),
+                         time = indices(time_1 : time_2),
+                         lat = values(list(lat.min, lat.max)),
+                         lon = values(list(lon.min, lon.max)),
+                         lon_var = 'lon',
+                         lon_reorder = CircularSort(0, 360),
+                         return_vars = list(time = 'model', lon = 'model', lat = 'model'),
                          retrieve = TRUE)
+#units <- attr(historical_data, 'Variables')[[var0]]$units
+#print("AAAAAAAAAA")
+#print(var0)
+#print(str(attributes(historical_data)))
 
-#  forecast_time <- attr(historical_data, 'Variables')$dat1$time
-#  time_1 <- which(substr(forecast_time, 1, 10) == start_historical)
-#  time_2 <- which(substr(forecast_time, 1, 10) == end_historical)
-#
-#  historical_data <- Start(dat = fullpath_filename,
-#                           var = var0,
-#                           #  sdate = paste0(seq(1970, 2000, by = 1), "0101"),
-#                           time = indices(time_1 : time_2), #values(list(first, second)),
-#                           lat = values(list(lat.min, lat.max)),
-#                           lon = values(list(lon.min, lon.max)),
-#                           lon_var = 'lon',
-#                           #ensemble = 'all',
-#                           #   time_var = 'time',
-#                           lon_reorder = CircularSort(0, 360),
-#                           return_vars = list(time = 'dat', lon = 'dat', lat = 'dat'),
-#                           retrieve = TRUE)
+#londim <- which(names(dim(historical_data)) == 'lon') 
+#latdim <- which(names(dim(historical_data)) == 'lat')
+lat <- attr(historical_data, "Variables")$dat1$lat
+lon <- attr(historical_data, "Variables")$dat1$lon
+historical_data <- historical_data * 24 * 60 * 60
+area_mean <- WeightedMean(historical_data, lon = lon, lat = lat)
+names(dim(area_mean)) <- c('model', 'var', 'time')
 
-PlotTimeSeries(historical_data, file_name = paste0(plot_dir, '/test.png'))
-####  time_dim <- which(names(dim(historical_data)) == "time")
-####  dims <- dim(historical_data)
-####  dims <- append(dims, c(12, dims[time_dim] / 12), after = time_dim)
-####  dims <- dims[-time_dim]
-####  dim(historical_data) <- dims
-####  names(dim(historical_data))[c(time_dim, time_dim + 1)] <- c("month", "year")
-####
-####  #Calculate the historical mean for each month
-####
-####  margins <- list(c(1 : length(dim(historical_data)))[-c(time_dim + 1)])
-####  historical_seasonal_mean <- Season(historical_data, posdim = time_dim, monini = monini, moninf = moninf,
-####                                     monsup = monsup)
-####
-####  margins <- list(c(1 : length(dim(historical_seasonal_mean)))[-c(time_dim + 1)])
-####  years_dim <- which(names(dim(historical_seasonal_mean)) == "year")
-####  climatology <- Mean1Dim(historical_seasonal_mean, years_dim)
-####
-####  rcp_data <- Start(dat = fullpath_filename,
-####                    var = var0,
-####                    time = "all", #values(list(first, second)),
-####                    latitude = values(list(lat.min, lat.max)),
-####                    longitude = values(list(lon.min, lon.max)),
-####                    longitude_var = 'longitude',
-####                    longitude_reorder = CircularSort(0, 360),
-####                    return_vars = list(time = 'dat', longitude = 'dat',
-####                                       latitude = 'dat'),
-####                    retrieve = FALSE)
-####
-####  forecast_time <- attr(rcp_data, 'Variables')$dat1$time
-####  time_1 <- which(substr(forecast_time, 1, 10) == start_projection)
-####  time_2 <- which(substr(forecast_time, 1, 10) == end_projection)
-####
-####  rcp_data <- Start(dat = fullpath_filename,
-####                    var = var0,
-####                    time = indices(time_1 : time_2), #values(list(first, second)),
-####                    latitude = values(list(lat.min, lat.max)),
-####                    longitude = values(list(lon.min, lon.max)),
-####                    longitude_var = 'longitude',
-####                    ensemble = 'all',
-####                    #   time_var = 'time',
-####                    longitude_reorder = CircularSort(0, 360),
-####                    return_vars = list(time = 'dat', longitude = 'dat',
-####                                       latitude = 'dat'),
-####                    retrieve = TRUE)
-####
-####
-####   time_dim <- which(names(dim(rcp_data)) == "time")
-####  dims <- dim(rcp_data)
-####  dims <- append(dims, c(12, dims[time_dim] / 12), after = time_dim)
-####  dims <- dims[-time_dim]
-####  dim(rcp_data) <- dims
-####  names(dim(rcp_data))[c(time_dim, time_dim + 1)] <- c("month", "year")
-####
-####  lat <- attr(rcp_data,"Variables")$dat1$latitude
-####  lon <- attr(rcp_data,"Variables")$dat1$longitude
-####
-####
-####  proj_seasonal_mean <- Season(rcp_data, posdim = time_dim, monini = monini, moninf = moninf,
-####                                     monsup = monsup)
-####
-####  years_dim <- which(names(dim(proj_seasonal_mean)) == "year")
-####  climatology <- InsertDim(climatology, years_dim, lendim = dim(proj_seasonal_mean)[years_dim])
-####  anomaly <- proj_seasonal_mean - climatology
-####
-####   #Calculate the projected mean temperature for each       ano <- AnoAgree(Mean1Dim(data$ano_rcp85_all[1,,,as.numeric(input$mon),,],2), members_dim = 1)
-####
-####  multiyearmeananomaly <- Mean1Dim(anomaly, years_dim)
-####  ensemble_dim <- which(names(dim(multiyearmeananomaly)) == "ensemble")
-####  agreement <- AnoAgree(multiyearmeananomaly, members_dim = ensemble_dim)
-####  ensemblemeananomaly <- Mean1Dim(multiyearmeananomaly,  ensemble_dim)
+a <- PlotTimeSeries(area_mean, 
+               coords = list(model = model_names[[var0]], 
+                             time = attr(historical_data, 'Variables')$dat1$time), 
+               colour_along = 'model', 
+               title = "RCP8.5: Monthly mean anomalies",
+               title_sub = paste0("Projection period: (", substr(end_projection, 1, 4), "-", substr(start_projection, 1, 4), 
+                                  ")\nReference period: (", substr(end_historical, 1, 4), "-", substr(start_historical, 1, 4), ")"), 
+               title_y = paste0("Anomaly (", as.character(units), ")"), 
+               title_x = "Year") + scale_x_datetime()
+               #file_width = 12, file_height = 8, file_name = paste0(plot_dir, '/test.png'))
+ggsave(width = 12, height = 8, filename = paste0(plot_dir, '/test.png'), plot = a)
+
+
+
+
+ # time_dim <- which(names(dim(historical_data)) == "time")
+# dims <- dim(historical_data)
+# dims <- append(dims, c(12, dims[time_dim] / 12), after = time_dim)
+# dims <- dims[-time_dim]
+# dim(historical_data) <- dims
+# names(dim(historical_data))[c(time_dim, time_dim + 1)] <- c("month", "year")
+# 
+# #Calculate the historical mean for each month
+# 
+# margins <- list(c(1 : length(dim(historical_data)))[-c(time_dim + 1)])
+# historical_seasonal_mean <- Season(historical_data, posdim = time_dim, monini = monini, moninf = moninf,
+#                                    monsup = monsup)
+# 
+# margins <- list(c(1 : length(dim(historical_seasonal_mean)))[-c(time_dim + 1)])
+# years_dim <- which(names(dim(historical_seasonal_mean)) == "year")
+# climatology <- Mean1Dim(historical_seasonal_mean, years_dim)
+# 
+# rcp_data <- Start(dat = fullpath_filename,
+#                   var = var0,
+#                   time = "all", #values(list(first, second)),
+#                   lat = values(list(lat.min, lat.max)),
+#                   lon = values(list(lon.min, lon.max)),
+#                   lon_var = 'lon',
+#                   lon_reorder = CircularSort(0, 360),
+#                   return_vars = list(time = 'dat', lon = 'dat',
+#                                      lat = 'dat'),
+#                   retrieve = FALSE)
+# 
+# forecast_time <- attr(rcp_data, 'Variables')$dat1$time
+# time_1 <- which(substr(forecast_time, 1, 7) == substr(start_projection, 1, 7))
+# time_2 <- which(substr(forecast_time, 1, 7) == substr(end_projection, 1, 7))
+# 
+# 
+# rcp_data <- Start(dat = fullpath_filename,
+#                   var = var0,
+#                   time = indices(time_1 : time_2), #values(list(first, second)),
+#                   lat = values(list(lat.min, lat.max)),
+#                   lon = values(list(lon.min, lon.max)),
+#                   lon_var = 'lon',
+#                   #   time_var = 'time',
+#                   lon_reorder = CircularSort(0, 360),
+#                   return_vars = list(time = 'dat', lon = 'dat',
+#                                      lat = 'dat'),
+#                   retrieve = TRUE)
+# 
+# 
+# time_dim <- which(names(dim(rcp_data)) == "time")
+# dims <- dim(rcp_data)
+# dims <- append(dims, c(12, dims[time_dim] / 12), after = time_dim)
+# dims <- dims[-time_dim]
+# dim(rcp_data) <- dims
+# names(dim(rcp_data))[c(time_dim, time_dim + 1)] <- c("month", "year")
+# 
+# lat <- attr(rcp_data,"Variables")$dat1$latitude
+# lon <- attr(rcp_data,"Variables")$dat1$longitude
+# 
+# 
+# proj_seasonal_mean <- Season(rcp_data, posdim = time_dim, monini = monini, moninf = moninf,
+#                              monsup = monsup)
+# 
+# years_dim <- which(names(dim(proj_seasonal_mean)) == "year")
+# climatology <- InsertDim(climatology, years_dim, lendim = dim(proj_seasonal_mean)[years_dim])
+# anomaly <- proj_seasonal_mean - climatology
+# 
+# #Calculate the projected mean temperature for each       ano <- AnoAgree(Mean1Dim(data$ano_rcp85_all[1,,,as.numeric(input$mon),,],2), members_dim = 1)
+# 
+# multiyearmeananomaly <- Mean1Dim(anomaly, years_dim)
+# dat_dim <- which(names(dim(multiyearmeananomaly)) == "dat")
+# agreement <- AnoAgree(multiyearmeananomaly, members_dim = dat_dim)
+# datmeananomaly <- Mean1Dim(multiyearmeananomaly,  dat_dim)
+##
+
+
+
+
+
 ####
 ####    figure_filename <- interface_get_figure_filename(diag_script_base,
 ####                                                 '',
@@ -213,4 +246,3 @@ PlotTimeSeries(historical_data, file_name = paste0(plot_dir, '/test.png'))
 ####  ### Time series plot
 ####    figure_path <- file.path(plot_dir, diag_base, paste0(figure_filename, "time_series", '.', output_file_type))
 ####  ggsave(time_series, device = NULL, path = figure_path_time_series)
-}
