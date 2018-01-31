@@ -123,7 +123,7 @@ a <- PlotTimeSeries(area_mean,
                title_y = paste0("Anomaly (", as.character(units), ")"), 
                title_x = "Year") + scale_x_datetime()
                #file_width = 12, file_height = 8, file_name = paste0(plot_dir, '/test.png'))
-ggsave(width = 12, height = 8, filename = paste0(plot_dir, '/test.png'), plot = a)
+ggsave(width = 12, height = 8, filename = paste0(plot_dir, '/ref_time_series.png'), plot = a)
 
 
 
@@ -185,6 +185,8 @@ ggsave(width = 12, height = 8, filename = paste0(plot_dir, '/test.png'), plot = 
 # 
  lat <- attr(rcp_data,"Variables")$dat1$lat
  lon <- attr(rcp_data,"Variables")$dat1$lon
+ dim(lon) <- c(lon = length(lon))
+ dim(lat) <- c(lat = length(lat))
 # 
 # 
  proj_seasonal_mean <- Season(rcp_data, posdim = time_dim, monini = monini, moninf = moninf,
@@ -202,10 +204,16 @@ ggsave(width = 12, height = 8, filename = paste0(plot_dir, '/test.png'), plot = 
 ##
 
 PlotEquiMap(datmeananomaly[1, 1, , ], lon = lon, lat = lat, color_fun = clim.palette("yellowred"), filled.continents = FALSE,
-              dots = drop(agreement) > agreement_threshold, fileout = paste0(plot_dir, '/test2.png'))
-
-
-
+              dots = drop(agreement) > agreement_threshold, fileout = paste0(plot_dir, '/anomaly_map.png'))
+attributes(lon) <- NULL
+attributes(lat) <- NULL
+dim(lon) <-  c(lon = length(lon))
+dim(lat) <- c(lat = length(lat))
+ano_data <- t(drop(datmeananomaly))
+stipling_data <- t(drop(agreement))
+names(dim(ano_data)) <- c('lon', 'lat')
+names(dim(stipling_data)) <- c('lon', 'lat')
+ArrayToNetCDF(list(anomaly = ano_data, anomaly_agreement = stipling_data, lon = lon, lat = lat), paste0(plot_dir, '/anomaly_agreement.nc'))
 ####
 ####    figure_filename <- interface_get_figure_filename(diag_script_base,
 ####                                                 '',
