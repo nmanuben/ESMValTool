@@ -1,12 +1,23 @@
-#ŀibssl-dev
+####REQUIRED SYSTEM LIBS
+####ŀibssl-dev
+####libnecdf-dev
+####cdo
+
+#R package dependencies installation script
 #install.packages('yaml')
 #install.packages('devtools')
-#libnecdf-dev
-#cdo
+#library(devtools)
+#Sys.setenv(TAR = '/bin/tar')
 #install_git('https://earth.bsc.es/gitlab/es/s2dverification', branch = 'production')
 #install_git('https://earth.bsc.es/gitlab/ces/multiApply', branch = 'develop-copyMargins')
 #install_git('https://earth.bsc.es/gitlab/es/startR', branch = 'develop-chunking')
+#install_git('https://earth.bsc.es/gitlab/es/easyNCDF', branch = 'master')
 
+
+
+
+
+#Parsing input file paths and creating output dirs
 args <- commandArgs(trailingOnly = TRUE)
 params <- yaml::read_yaml(args[1])
 
@@ -14,13 +25,20 @@ plot_dir <- params$plot_dir
 run_dir <- params$run_dir
 work_dir <- params$work_dir
 ## Create working dirs if they do not exist
-dir.create(plot_dir, showWarnings = FALSE)
-dir.create(run_dir, showWarnings = FALSE)
-dir.create(work_dir, showWarnings = FALSE)
+dir.create(plot_dir, recursive = TRUE)
+dir.create(run_dir, recursive = TRUE)
+dir.create(work_dir, recursive = TRUE)
 
 input_files_per_var <- yaml::read_yaml(params$input_files)
 var_names <- names(input_files_per_var)
-input_files <- lapply(var_names, function(x) input_files_per_var[[x]])
+input_files <- lapply(var_names, function(x) names(input_files_per_var[[x]]))
+names(input_files) <- var_names
+
+## Do not print warnings
+#options(warn=-1)
+
+
+
 
 #Var considered
 var0 <- var_names[1]
@@ -45,56 +63,47 @@ monsup <- params$monsup
 #Threshold for ensemble agreement
 agreement_threshold <- params$agreement_threshold
 
-## Do not print warnings
-options(warn=-1)
+
+
+
 
 library(s2dverification)
 library(startR)
 library(ggplot2)
-source('http://earth.bsc.es/gitlab/es/s2dverification/raw/develop-MagicWP5/R/AnoAgree.R')
-source('http://earth.bsc.es/gitlab/es/s2dverification/raw/develop-debug-plot-ts/R/PlotTimeSeries.R')
+source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-MagicWP5/R/AnoAgree.R')
+source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-debug-plot-ts/R/PlotTimeSeries.R')
 
-## Plot function
+fullpath_filenames <- input_files[[var0]]
+historical_data <- Start(dat = fullpath_filenames,
+                         var = var0,
+                         var_var = 'var_names',
+                         #  sdate = paste0(seq(1970, 2000, by = 1), "0101"),
+                         time = "all", 
+                         lat = values(list(lat.min, lat.max)),
+                         lon = values(list(lon.min, lon.max)),
+                         lon_var = 'lon',
+                         lon_reorder = CircularSort(0, 360),
+                         return_vars = list(time = 'dat', lon = 'dat', lat = 'dat'),
+                         retrieve = TRUE)
 
+#  forecast_time <- attr(historical_data, 'Variables')$dat1$time
+#  time_1 <- which(substr(forecast_time, 1, 10) == start_historical)
+#  time_2 <- which(substr(forecast_time, 1, 10) == end_historical)
+#
+#  historical_data <- Start(dat = fullpath_filename,
+#                           var = var0,
+#                           #  sdate = paste0(seq(1970, 2000, by = 1), "0101"),
+#                           time = indices(time_1 : time_2), #values(list(first, second)),
+#                           lat = values(list(lat.min, lat.max)),
+#                           lon = values(list(lon.min, lon.max)),
+#                           lon_var = 'lon',
+#                           #ensemble = 'all',
+#                           #   time_var = 'time',
+#                           lon_reorder = CircularSort(0, 360),
+#                           return_vars = list(time = 'dat', lon = 'dat', lat = 'dat'),
+#                           retrieve = TRUE)
 
-##
-## Run it all
-##
-print(input_files)
-i <- 1
-for (model_data_path in input_files[[var0]]) {
-  fullpath_filename <- model_data_path
-  historical_data <- Start(dat = fullpath_filename,
-                           var = var0,
-                           var_var = 'var_names',
-                           #  sdate = paste0(seq(1970, 2000, by = 1), "0101"),
-                           time = "all", #values(list(first, second)),
-                           lat = values(list(lat.min, lat.max)),
-                           lon = values(list(lon.min, lon.max)),
-                           lon_var = 'lon',
-                           lon_reorder = CircularSort(0, 360),
-                           return_vars = list(time = 'dat', lon = 'dat', lat = 'dat'),
-                           retrieve = FALSE)
-
-  forecast_time <- attr(historical_data, 'Variables')$dat1$time
-  time_1 <- which(substr(forecast_time, 1, 10) == start_historical)
-  time_2 <- which(substr(forecast_time, 1, 10) == end_historical)
-
-  historical_data <- Start(dat = fullpath_filename,
-                           var = var0,
-                           #  sdate = paste0(seq(1970, 2000, by = 1), "0101"),
-                           time = indices(time_1 : time_2), #values(list(first, second)),
-                           lat = values(list(lat.min, lat.max)),
-                           lon = values(list(lon.min, lon.max)),
-                           lon_var = 'lon',
-                           #ensemble = 'all',
-                           #   time_var = 'time',
-                           lon_reorder = CircularSort(0, 360),
-                           return_vars = list(time = 'dat', lon = 'dat', lat = 'dat'),
-                           retrieve = TRUE)
-
-  PlotTimeSeries(historical_data, file_name = paste0(plot_dir, '/test.png'))
-  i <- i + 1
+PlotTimeSeries(historical_data, file_name = paste0(plot_dir, '/test.png'))
 ####  time_dim <- which(names(dim(historical_data)) == "time")
 ####  dims <- dim(historical_data)
 ####  dims <- append(dims, c(12, dims[time_dim] / 12), after = time_dim)
