@@ -103,10 +103,7 @@ historical_data <- Start(model = fullpath_filenames,
                          lon_reorder = CircularSort(0, 360),
                          return_vars = list(time = 'model', lon = 'model', lat = 'model'),
                          retrieve = TRUE)
-#units <- attr(historical_data, 'Variables')[[var0]]$units
-#print("AAAAAAAAAA")
-#print(var0)
-#print(str(attributes(historical_data)))
+units <- attr(historical_data, 'Variables')[['common']][[var0]]$units
 
 #londim <- which(names(dim(historical_data)) == 'lon') 
 #latdim <- which(names(dim(historical_data)) == 'lat')
