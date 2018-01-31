@@ -71,6 +71,7 @@ agreement_threshold <- params$agreement_threshold
 library(s2dverification)
 library(startR)
 library(ggplot2)
+library(multiApply)
 source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-MagicWP5/R/AnoAgree.R')
 source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-Magic_WP6/R/WeightedMean.R')
 source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-debug-plot-ts/R/PlotTimeSeries.R')
