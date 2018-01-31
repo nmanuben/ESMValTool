@@ -50,8 +50,8 @@ diagnostics:
         #Region considered
         lat_max: 70
         lat_min: 27
-        lon_max: 45
-        lon_min: 345
+        lon_max: 50
+        lon_min: 5
 
         #Start and end periods for the historical and projection periods
         start_historical: "2000-01-01"
