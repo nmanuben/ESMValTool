@@ -3,14 +3,16 @@
 ####libnecdf-dev
 ####cdo
 
+# conda install -c conda-forge r-ncdf4
+
 #R package dependencies installation script
 #install.packages('yaml')
 #install.packages('devtools')
 #library(devtools)
 #Sys.setenv(TAR = '/bin/tar')
 #install_git('https://earth.bsc.es/gitlab/es/s2dverification', branch = 'production')
-#install_git('https://earth.bsc.es/gitlab/ces/multiApply', branch = 'develop-copyMargins')
-#install_git('https://earth.bsc.es/gitlab/es/startR', branch = 'develop-chunking')
+#install_git('https://earth.bsc.es/gitlab/ces/multiApply', branch = 'master')
+#install_git('https://earth.bsc.es/gitlab/es/startR', branch = 'develop-hotfixes-0.0.2')
 #install_git('https://earth.bsc.es/gitlab/es/easyNCDF', branch = 'master')
 
 
@@ -18,6 +20,7 @@
 
 
 #Parsing input file paths and creating output dirs
+#args <- c('/home/Earth/nmanuben/esmvaltool_output/namelist_anomaly_agreement_20180302_135018/run/anomaly_agreement/main/settings.yml')
 args <- commandArgs(trailingOnly = TRUE)
 params <- yaml::read_yaml(args[1])
 
@@ -81,23 +84,9 @@ historical_data <- Start(model = fullpath_filenames,
                          var = var0,
                          var_var = 'var_names',
                          #  sdate = paste0(seq(1970, 2000, by = 1), "0101"),
-                         time = "all", 
-                         lat = values(list(lat.min, lat.max)),
-                         lon = values(list(lon.min, lon.max)),
-                         lon_var = 'lon',
-                         lon_reorder = CircularSort(0, 360),
-                         return_vars = list(time = 'model', lon = 'model', lat = 'model'),
-                         retrieve = FALSE)
-
-forecast_time <- attr(historical_data, 'Variables')$dat1$time
-time_1 <- which(substr(forecast_time, 1, 7) == substr(start_historical, 1, 7))
-time_2 <- which(substr(forecast_time, 1, 7) == substr(end_historical, 1, 7))
-
-historical_data <- Start(model = fullpath_filenames,
-                         var = var0,
-                         var_var = 'var_names',
-                         #  sdate = paste0(seq(1970, 2000, by = 1), "0101"),
-                         time = indices(time_1 : time_2),
+                         time = values(list(as.POSIXct(start_historical), 
+                                            as.POSIXct(end_historical))),
+                         time_tolerance = as.difftime(15, units = 'days'), 
                          lat = values(list(lat.min, lat.max)),
                          lon = values(list(lon.min, lon.max)),
                          lon_var = 'lon',
@@ -149,28 +138,12 @@ ggsave(width = 12, height = 8, filename = paste0(plot_dir, '/ref_time_series.png
  rcp_data <- Start(dat = fullpath_filenames,
                    var = var0,
                    var_var = 'var_names',
-                   time = "all", #values(list(first, second)),
+                   time = values(list(as.POSIXct(start_projection),
+                                      as.POSIXct(end_projection))),
+                   time_tolerance = as.difftime(15, units = 'days'),
                    lat = values(list(lat.min, lat.max)),
                    lon = values(list(lon.min, lon.max)),
                    lon_var = 'lon',
-                   lon_reorder = CircularSort(0, 360),
-                   return_vars = list(time = 'dat', lon = 'dat',
-                                      lat = 'dat'),
-                   retrieve = FALSE)
-# 
- forecast_time <- attr(rcp_data, 'Variables')$dat1$time
- time_1 <- which(substr(forecast_time, 1, 7) == substr(start_projection, 1, 7))
- time_2 <- which(substr(forecast_time, 1, 7) == substr(end_projection, 1, 7))
-# 
-# 
- rcp_data <- Start(dat = fullpath_filenames,
-                    var = var0,
-                    var_var = 'var_names',
-                   time = indices(time_1 : time_2), #values(list(first, second)),
-                   lat = values(list(lat.min, lat.max)),
-                   lon = values(list(lon.min, lon.max)),
-                   lon_var = 'lon',
-#                   #   time_var = 'time',
                    lon_reorder = CircularSort(0, 360),
                    return_vars = list(time = 'dat', lon = 'dat',
                                       lat = 'dat'),
@@ -189,6 +162,7 @@ ggsave(width = 12, height = 8, filename = paste0(plot_dir, '/ref_time_series.png
  dim(lon) <- c(lon = length(lon))
  dim(lat) <- c(lat = length(lat))
 # 
+rcp_data <- rcp_data * 24 * 60 * 60
 # 
  proj_seasonal_mean <- Season(rcp_data, posdim = time_dim, monini = monini, moninf = moninf,
                               monsup = monsup)
