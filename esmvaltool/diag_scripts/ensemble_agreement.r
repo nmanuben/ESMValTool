@@ -177,6 +177,7 @@ ggsave(width = 12, height = 8, filename = paste0(plot_dir, '/ref_time_series.png
                    retrieve = TRUE)
 # 
 # 
+ rcp_data <- rcp_data * 24 * 60 * 60                     
  time_dim <- which(names(dim(rcp_data)) == "time")
  dims <- dim(rcp_data)
  dims <- append(dims, c(12, dims[time_dim] / 12), after = time_dim)
