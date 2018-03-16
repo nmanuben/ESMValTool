@@ -81,35 +81,20 @@ historical_data <- Start(model = fullpath_filenames,
                          var = var0,
                          var_var = 'var_names',
                          #  sdate = paste0(seq(1970, 2000, by = 1), "0101"),
-                         time = "all", 
-                         lat = values(list(lat.min, lat.max)),
-                         lon = values(list(lon.min, lon.max)),
-                         lon_var = 'lon',
-                         lon_reorder = CircularSort(0, 360),
-                         return_vars = list(time = 'model', lon = 'model', lat = 'model'),
-                         retrieve = FALSE)
-
-forecast_time <- attr(historical_data, 'Variables')$dat1$time
-time_1 <- which(substr(forecast_time, 1, 7) == substr(start_historical, 1, 7))
-time_2 <- which(substr(forecast_time, 1, 7) == substr(end_historical, 1, 7))
-
-historical_data <- Start(model = fullpath_filenames,
-                         var = var0,
-                         var_var = 'var_names',
-                         #  sdate = paste0(seq(1970, 2000, by = 1), "0101"),
-                         time = indices(time_1 : time_2),
+                         time = values(list(start_historical, end_historical)), 
+                         time_tolerance = as.difftime(15, units = 'days'),
                          lat = values(list(lat.min, lat.max)),
                          lon = values(list(lon.min, lon.max)),
                          lon_var = 'lon',
                          lon_reorder = CircularSort(0, 360),
                          return_vars = list(time = 'model', lon = 'model', lat = 'model'),
                          retrieve = TRUE)
-units <- attr(historical_data, 'Variables')[['common']][[var0]]$units
+units <- attr(historical_data, 'Variables')$common[[var0]]$units
+lat <- attr(historical_data, "Variables")$dat1$lat
+lon <- attr(historical_data, "Variables")$dat1$lon
 
 #londim <- which(names(dim(historical_data)) == 'lon') 
 #latdim <- which(names(dim(historical_data)) == 'lat')
-lat <- attr(historical_data, "Variables")$dat1$lat
-lon <- attr(historical_data, "Variables")$dat1$lon
 historical_data <- historical_data * 24 * 60 * 60
 area_mean <- WeightedMean(historical_data, lon = lon, lat = lat)
 names(dim(area_mean)) <- c('model', 'var', 'time')
@@ -149,28 +134,11 @@ ggsave(width = 12, height = 8, filename = paste0(plot_dir, '/ref_time_series.png
  rcp_data <- Start(dat = fullpath_filenames,
                    var = var0,
                    var_var = 'var_names',
-                   time = "all", #values(list(first, second)),
+                   time = values(list(start_projection, end_projection)),
+                   time_tolerance = as.difftime(15, units = 'days'),
                    lat = values(list(lat.min, lat.max)),
                    lon = values(list(lon.min, lon.max)),
                    lon_var = 'lon',
-                   lon_reorder = CircularSort(0, 360),
-                   return_vars = list(time = 'dat', lon = 'dat',
-                                      lat = 'dat'),
-                   retrieve = FALSE)
-# 
- forecast_time <- attr(rcp_data, 'Variables')$dat1$time
- time_1 <- which(substr(forecast_time, 1, 7) == substr(start_projection, 1, 7))
- time_2 <- which(substr(forecast_time, 1, 7) == substr(end_projection, 1, 7))
-# 
-# 
- rcp_data <- Start(dat = fullpath_filenames,
-                    var = var0,
-                    var_var = 'var_names',
-                   time = indices(time_1 : time_2), #values(list(first, second)),
-                   lat = values(list(lat.min, lat.max)),
-                   lon = values(list(lon.min, lon.max)),
-                   lon_var = 'lon',
-#                   #   time_var = 'time',
                    lon_reorder = CircularSort(0, 360),
                    return_vars = list(time = 'dat', lon = 'dat',
                                       lat = 'dat'),
