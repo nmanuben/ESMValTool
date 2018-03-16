@@ -26,14 +26,14 @@ max_parallel_tasks: 1
 
 rootpath:
   # Rootpath to CMIP5 data
-  CMIP5: ~/esmvaltool_input
-  #CMIP5: /mnt/hgfs/Desktop/esmvaltool_input
+  #CMIP5: ~/esmvaltool_input
+  CMIP5: /mnt/hgfs/Desktop/esmvaltool_input
   # Rootpath to OBS data
-  OBS: ~/esmvaltool_input
-  #OBS: /mnt/hgfs/Desktop/esmvaltool_input
+  #OBS: ~/esmvaltool_input
+  OBS: /mnt/hgfs/Desktop/esmvaltool_input
   # Default
-  default: ~/esmvaltool_input
-  #default: /mnt/hgfs/Desktop/esmvaltool_input
+  #default: ~/esmvaltool_input
+  default: /mnt/hgfs/Desktop/esmvaltool_input
 
 # Directory structure for input data: [default]/BADC/DKRZ/ETHZ/etc
 # See config-developer.yml for definitions.

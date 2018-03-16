@@ -47,8 +47,8 @@ library(startR)
 library(ggplot2)
 library(multiApply)
 library(devtools)
-source('/home/Earth/ahunter/ESMValTool_R/WeatherRegime.R')
-source('/home/Earth/ahunter/ESMValTool_R/WeightedMean.R')
+source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-Regimes/R/WeatherRegime.R')
+source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-Magic_WP6/R/WeightedMean.R')
 #source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-debug-plot-ts/R/PlotTimeSeries.R')
 
 # sdates <- paste0(start_year:end_year, paste0(month, '01'))
@@ -75,6 +75,8 @@ data <- Start(model = fullpath_filenames,
               return_vars = list(time = 'model', lon = 'model', lat = 'model'),
               retrieve = TRUE)
 
+print(dim(data))
+
 lat <- attr(data, "Variables")$dat1$lat
 lon <- attr(data, "Variables")$dat1$lon
 
@@ -95,16 +97,17 @@ clim <- Clim(var_exp = data,var_obs = data,memb=T)
 #clim_smoothed_obs<-aperm(apply(clim$clim_obs,c(1:length(dim(clim$clim_obs)))[-which(names(dim(clim$clim_obs))=='ftime')],Loess,loess_span=1),c(2,1,3,4))
 #clim_smoothed_exp<-aperm(apply(clim$clim_exp,c(1:length(dim(clim$clim_exp)))[-which(names(dim(clim$clim_exp))=='ftime')],Loess,loess_span=1),c(2,1,3,4))
 
-anom_obs<-Ano(data,clim_obs)
+anom_obs <- Ano(data, clim$clim_obs)
 #anom_exp<-Ano(data$mod,clim_smoothed_exp)
 
-WR_obs<-WeatherRegime(data=anom_obs,EOFS=FALSE,lat_weights = TRUE,lat=lat, lon=lon, ncenters = ncenters, method = cluster_method)
+WR_obs <- WeatherRegime(data = anom_obs, EOFS = FALSE, lat_weights = TRUE, lat = lat, lon = lon, 
+                        ncenters = ncenters, method = cluster_method)
 
-titles<-paste0('freq = ',round(WR_obs$frequency,1),'%')
+titles<-paste0('freq = ', round(WR_obs$frequency, 1), '%')
 PlotLayout(PlotEquiMap,c(1,2),lon=lon,lat=lat,var=WR_obs$composite/100,
            titles=paste0(paste0('Cluster ',1:4),' (',paste0('freq = ',round(WR_obs$frequency,1),'%'),' )'),filled.continents=F,
            axelab=F,draw_separators = T,subsampleg = 1,brks=seq(-16,16,by=2),
-           bar_extra_labels = c(2,0,0,0))#,fileout= paste0(plot_dir, 'observed_regimes.png'))
+           bar_extra_labels = c(2,0,0,0),fileout= paste0(plot_dir, '/observed_regimes.png'))
 
 
 #reference<-drop(WR_obs$composite)

@@ -52,9 +52,9 @@ diagnostics:
         lon_min: 274.5
 
         #Start and end periods for the historical and projection periods
-        start_historical: "1960-02-01"
+        start_historical: "1960-01-01"
         end_historical: "1991-12-01"
-        start_projection: "1960-02-01"
+        start_projection: "1960-01-01"
         end_projection: "1991-12-01"
 
         #Regime parameters
