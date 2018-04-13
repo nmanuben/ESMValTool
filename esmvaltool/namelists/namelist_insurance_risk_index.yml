@@ -1,0 +1,62 @@
+###############################################################################
+# namelist_aci.xml
+#
+# Description
+# Namelist for computing the actuary's risk index.
+
+#
+# Authors
+# Alasdair Hunter (BSC, Spain)
+# Nicolau Manubens (BSC, Spain)
+# Louis-Philippe  (BSC, Spain)
+#
+# Project
+# C3S Magic
+#
+# Reference
+# Gleckler et al., J. Geophys. Res., 113, D06104, doi: 10.1029/2007JD008972
+# (2008)
+#
+# This namelist is part of the ESMValTool
+###############################################################################
+---
+fullpath_filename <- "/esarchive/scratch/pbretonn/cmip5-cp4cds/historical/daily_mean/tasmin/tasmin_day_IPSL-CM5A-LR_historical_r1i1p1_19500101-20051231.nc"
+models:
+  - {model: IPSL,  project: CMIP5,  mip: day,  exp: historical,  ensemble: r1i1p1,  start_year: 1950,  end_year: 2100}
+ 
+preprocessors:
+  preproc:
+    regrid:
+      target_grid: IPSL,
+      scheme: linear
+    mask_fillvalues:
+      threshold_fraction: 0.95
+
+diagnostics:
+  weather_regime:
+    description: Compute the insurer's risk index.
+    variables:
+      tasmax:
+        preprocessor: preproc
+        mip: day
+        field: T2M
+    scripts:
+      main:
+        script: risk_index.r #(in diag_scripts)
+        
+        #Region considered
+        lat_max: 81
+        lat_min: 27
+        lon_max: 45
+        lon_min: 274.5
+
+        #Start and end periods for the historical and projection periods
+        start_historical: "1960-01-01"
+        end_historical: "1991-12-01"
+        start_projection: "1960-01-01"
+        end_projection: "1991-12-01"
+
+        #ACI parameters
+        metric: "tx90p"
+        rcp8.5: TRUE
+        rcp2.6: TRUE

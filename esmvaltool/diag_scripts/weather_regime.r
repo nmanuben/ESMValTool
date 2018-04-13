@@ -51,15 +51,6 @@ source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-Regimes/R/Wea
 source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-Magic_WP6/R/WeightedMean.R')
 #source('https://earth.bsc.es/gitlab/es/s2dverification/raw/develop-debug-plot-ts/R/PlotTimeSeries.R')
 
-# sdates <- paste0(start_year:end_year, paste0(month, '01'))
-# data <- Load(var0, exp = 'system4_m1',
-#              obs = 'erainterim',
-#              sdates = sdates,
-#              storefreq=freq,
-#              leadtimemin = 1, leadtimemax = leadtimemax,
-#              latmin = lat.min, latmax = lat.max,
-#              lonmin = lon.min, lonmax = lon.max, output = 'lonlat')
-
 fullpath_filenames <- input_files[[var0]]
 data <- Start(model = fullpath_filenames,
               var = var0,
@@ -94,8 +85,6 @@ Loess<-function(clim,loess_span){
 }
 
 clim <- Clim(var_exp = data,var_obs = data,memb=T)
-#clim_smoothed_obs<-aperm(apply(clim$clim_obs,c(1:length(dim(clim$clim_obs)))[-which(names(dim(clim$clim_obs))=='ftime')],Loess,loess_span=1),c(2,1,3,4))
-#clim_smoothed_exp<-aperm(apply(clim$clim_exp,c(1:length(dim(clim$clim_exp)))[-which(names(dim(clim$clim_exp))=='ftime')],Loess,loess_span=1),c(2,1,3,4))
 
 anom_obs <- Ano(data, clim$clim_obs)
 #anom_exp<-Ano(data$mod,clim_smoothed_exp)
