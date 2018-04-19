@@ -77,7 +77,7 @@ attributes(lat) <- NULL
 # dim(years) <- c(length(years))
 dim(lon) <-  c(lon = length(lon))
 dim(lat) <- c(lat = length(lat))
-
+model_dim <- which(names(dim(historical_data)) == "model")
 ###Compute the quantiles and standard deviation for the historical period.
 
 if (var0 == "tasmin") {
@@ -112,13 +112,23 @@ for (m in 1 : length(metric)) {
   
   if (var0 != "pr") {
     base_mean[[m]] <- 10
+    base_mean_historical <- 10
   } else {
     base_mean[[m]] <-  Apply(list(base_index$result), target_dims = list(c(1)), AtomicFun = "mean")$output1
     base_mean_historical <- InsertDim(base_mean[[m]], 1, dim(base_index$result)[1])
   }
   historical_index_standardized <- (base_index$result - base_mean_historical) / base_sd_historical[[m]]
-  for (mod in 1 : dim(projection_data)[model_dim]) {
-    ArrayToNetCDF(list(metric = historical_index_standardized[,mod,1, ,],  lat = lat, lon = lon), 
+  for (mod in 1 : dim(historical_data)[model_dim]) {
+    historical_index_standardized <- aperm(historical_index_standardized[,mod,1, ,], c(3,2,1))
+    names(dim(historical_index_standardized)) <- c("lon", "lat", "time")
+    metadata <- list(index = list(dim = list(list(name='time', unlim = FALSE))))
+    attr(historical_index_standardized, 'variables') <- metadata
+    time <- as.numeric(base_index$years)
+    attributes(time) <- NULL
+    dim(time) <- c(time = length(time))
+    metadata <- list(time = list(prec = 'double', units = 'years', dim = list(list(name='time', unlim = FALSE))))
+    attr(time, "variables") <- metadata
+    ArrayToNetCDF(list(index = historical_index_standardized,  time = time, lat = lat, lon = lon), 
                   paste0(metric[m], "_",model_names[mod],"_", "historical", "_", start_historical, "_", end_historical, ".nc"))
   }
 }  
@@ -152,18 +162,24 @@ for (i in 1 : length(fullpath_filenames_projection)) {
     
     base_sd_proj <- InsertDim(base_sd[[m]], 1, dim(projection_index$result)[1])
     projection_index_standardized <- (projection_index$result - projection_mean) / base_sd_proj
-    model_dim <- which(names(dim(projection_index_standardized)) == "model")
     for (mod in 1 : dim(projection_data)[model_dim]) {
-      ArrayToNetCDF(list(metric = projection_index_standardized[,mod,1, ,],  lat = lat, lon = lon), 
+      projection_index_standardized <- aperm(projection_index_standardized[,mod,1, ,], c(3,2,1))
+      names(dim(projection_index_standardized)) <- c("lon", "lat", "time")
+      metadata <- list(index = list(dim = list(list(name='time', unlim = FALSE))))
+      attr(projection_index_standardized, 'variables') <- metadata
+      time <- as.numeric(projection_index$years)
+      attributes(time) <- NULL
+      dim(time) <- c(time = length(time))
+      metadata <- list(time = list(prec = 'double', units = "years", dim = list(list(name='time', unlim = FALSE))))
+      attr(time, "variables") <- metadata
+      ArrayToNetCDF(list(metric= projection_index_standardized, time = time,  lat = lat, lon = lon), 
                     paste0(metric[m], "_",model_names[mod],"_", rcp_scenario[i], "_", start_projection, "_", end_projection, ".nc"))
       }
     }
 }
-    
-    
-      
-     
-      
+
+
+
   
 
 
