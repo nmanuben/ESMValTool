@@ -67,9 +67,14 @@ historical_data <- Start(model = fullpath_filenames_historical,
               return_vars = list(time = 'model', lon = 'model', lat = 'model'),
               retrieve = TRUE)
 
+
 lat <- attr(historical_data, "Variables")$dat1$lat
 lon <- attr(historical_data, "Variables")$dat1$lon
 time_dimension <- which(names(dim(historical_data)) == "time")
+lon[lon > 180] <- lon[lon > 180] - 360
+lon_order <- sort(lon, index.return = TRUE)
+historical_data <- Subset(historical_data, "lon", lon_order$ix)
+lon <- lon_order$x
 
 attributes(lon) <- NULL
 attributes(lat) <- NULL
@@ -121,14 +126,14 @@ for (m in 1 : length(metric)) {
   for (mod in 1 : dim(historical_data)[model_dim]) {
     historical_index_standardized <- aperm(historical_index_standardized[,mod,1, ,], c(3,2,1))
     names(dim(historical_index_standardized)) <- c("lon", "lat", "time")
-    metadata <- list(index = list(dim = list(list(name='time', unlim = FALSE))))
+    metadata <- list(index = list(dim = list(list(name='time', unlim = FALSE, prec='double'))))
     attr(historical_index_standardized, 'variables') <- metadata
     time <- as.numeric(base_index$years)
     attributes(time) <- NULL
     dim(time) <- c(time = length(time))
-    metadata <- list(time = list(prec = 'double', units = 'years', dim = list(list(name='time', unlim = FALSE))))
+    metadata <- list(time = list(standard_name = 'time', long_name = 'time', units = 'years since 0-0-0 00:00:00', prec = 'double', dim = list(list(name='time', unlim = FALSE))))
     attr(time, "variables") <- metadata
-    ArrayToNetCDF(list(index = historical_index_standardized,  time = time, lat = lat, lon = lon), 
+    ArrayToNetCDF(list(index = historical_index_standardized, lat = lat, lon = lon, time = time), 
                   paste0(metric[m], "_",model_names[mod],"_", "historical", "_", start_historical, "_", end_historical, ".nc"))
   }
 }  
@@ -148,6 +153,9 @@ for (i in 1 : length(fullpath_filenames_projection)) {
                              lon_reorder = CircularSort(0, 360),
                              return_vars = list(time = 'model', lon = 'model', lat = 'model'),
                              retrieve = TRUE)
+   
+    projection_data <- Subset(projection_data, "lon", lon_order$ix)
+    lon <- lon_order$x
   for (m in 1 : length(metric)) {
     
     if (var0 != "pr") {
@@ -164,23 +172,32 @@ for (i in 1 : length(fullpath_filenames_projection)) {
     projection_index_standardized <- (projection_index$result - projection_mean) / base_sd_proj
     for (mod in 1 : dim(projection_data)[model_dim]) {
       projection_index_standardized <- aperm(projection_index_standardized[,mod,1, ,], c(3,2,1))
+      if (max(lon) > 180) {
+        lon_new <- lon
+        lon_new[lon > 180] <- lon[lon < 180] - 360
+         order(projection_index_standardized[lon_new,,])
+      }
       names(dim(projection_index_standardized)) <- c("lon", "lat", "time")
       metadata <- list(index = list(dim = list(list(name='time', unlim = FALSE))))
       attr(projection_index_standardized, 'variables') <- metadata
       time <- as.numeric(projection_index$years)
       attributes(time) <- NULL
       dim(time) <- c(time = length(time))
-      metadata <- list(time = list(prec = 'double', units = "years", dim = list(list(name='time', unlim = FALSE))))
+      metadata <- list(time = list(standard_name = 'time', long_name = 'time', units = 'years since 0-0-0 00:00:00', prec = 'double', dim = list(list(name='time', unlim = FALSE))))
       attr(time, "variables") <- metadata
       ArrayToNetCDF(list(metric= projection_index_standardized, time = time,  lat = lat, lon = lon), 
                     paste0(metric[m], "_",model_names[mod],"_", rcp_scenario[i], "_", start_projection, "_", end_projection, ".nc"))
+      
+      PlotEquiMap(Mean1Dim(projection_index_standardized, 3), )
       }
-    }
+  }
+    
 }
 
 
 
   
+
 
 
 
