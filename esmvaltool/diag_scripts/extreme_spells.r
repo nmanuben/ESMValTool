@@ -124,7 +124,7 @@ for (i in 1 : length(fullpath_filenames_projection)){
                   " (",rcp_scenario[i], ")") 
   PlotEquiMap(Mean1Dim(data, 3), lon = lon, lat = lat, fill = FALSE, 
               brks = brks, color_fun = clim.palette("yellowred"), 
-              units = paste0("Number of days" ), toptitle = title,
+              units = paste0("Days" ), toptitle = title,
               fileout = paste0(var0, "_extreme_spell_duration", "_",model_names,"_", rcp_scenario[i], 
                                "_", start_projection, "_", end_projection, ".pdf"),
               title_scale = 0.5)

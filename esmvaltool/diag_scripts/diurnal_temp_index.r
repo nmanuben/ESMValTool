@@ -118,23 +118,53 @@ for (i in 1 : length(fullpath_filenames_projection_tasmax)){
   lon_order <- sort(lon, index.return = TRUE)
   dtr_indicator$indicator <- Subset(dtr_indicator$indicator, "lon", lon_order$ix)
   lon <- lon_order$x
+  season <-   as.factor(dtr_indicator$season)# dtr_indicator$season
+  year <- dtr_indicator$year
   attributes(lon) <- NULL
   attributes(lat) <- NULL
   dim(lon) <-  c(lon = length(lon))
   dim(lat) <- c(lat = length(lat))
-  data <- Mean1Dim(dtr_indicator$indicator, 2)
-  data <- data[,1,1,,]
-  data <- aperm(data, c(3,2,1))
-  names(dim(data)) <- c("lon", "lat", "time")
-  metadata <- list(index = list(dim = list(list(name='time', unlim = FALSE, prec='double'))))
-  attr(data, 'variables') <- metadata
-  time <- as.numeric(dtr_indicator$year)
-  attributes(time) <- NULL
-  dim(time) <- c(time = length(time))
-  metadata <- list(time = list(standard_name = 'time', long_name = 'time', units = 'years since 0-0-0 00:00:00', prec = 'double', dim = list(list(name='time', unlim = FALSE))))
-  attr(time, "variables") <- metadata
-  ArrayToNetCDF(list(metric= data, lat = lat, lon = lon, time = time), 
-                paste0("dtr_indicator", "_",model_names,"_", rcp_scenario[i], "_", start_projection, "_", end_projection, ".nc"))
+  data <- dtr_indicator$indicator
+  
+  for (j in 1 : length(levels(season))) {
+    data_subset <- data[,j,,,,]
+    data_subset <- aperm(data_subset, c(3,2,1))
+    names(dim(data_subset)) <- c("lon", "lat", "time")
+    metadata <- list(index = list(dim = list(list(name='time', unlim = FALSE, prec='double'))))
+    attr(data_subset, 'variables') <- metadata
+    day <- "01"
+    if (levels(season)[j] == "DJF") {
+      month <- "-01-"
+    } else if (levels(season)[j] == "MAM") {
+      month <- "-03-"
+    } else if (levels(season)[j] == "JJA") {
+      month <- "-06-"
+    } else {
+      month <- "-09-"
+    }
+    time <- as.POSIXct(paste0(year, month, day))
+    time <- julian(time, origin = as.POSIXct("1970-01-01"))
+    
+    attributes(time) <- NULL
+    dim(time) <- c(time = length(time))
+    metadata <- list(time = list(standard_name = 'time', long_name = 'time', units = 'days since 1970-01-01 00:00:00', prec = 'double', dim = list(list(name='time', unlim = FALSE))))
+    attr(time, "variables") <- metadata
+    ArrayToNetCDF(list(metric= data_subset, lat = lat, lon = lon, time = time), 
+                  paste0("dtr_indicator","_",levels(season)[j] ,"_" ,model_names,"_", rcp_scenario[i], "_", start_projection, "_", end_projection, ".nc"))
+    title <- paste0("Number of days in ",levels(season)[j]  , " exceeding the mean diurnal temperature range by 5 degrees ", " ", substr(start_projection, 1, 4), "-", 
+                    substr(end_projection, 1, 4)) 
+    print(time)
+    breaks <- seq(0, max(data_subset),5)
+    PlotEquiMap(Mean1Dim(data_subset, 3), lon = lon, lat = lat, filled.continents = FALSE,
+                units = "Days", title_scale = 0.5, 
+                toptitle = title, brks = breaks, color_fun = clim.palette("yellowred"),
+                fileout =  paste0("dtr_indicator_",levels(season)[j], "_",model_names,"_", rcp_scenario[i], "_", start_projection, "_", end_projection, ".pdf"))
+    
+  }
+  
+  
+  
+ 
 }
 
                          

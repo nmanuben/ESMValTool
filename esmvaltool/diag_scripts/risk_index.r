@@ -93,9 +93,12 @@ if (var0 == "tasmin") {
   quantile <- 0.9
 } else if (var0 == "sfcWind") {
   metric <- "Wx"
+  historical_data <- 0.5 * 1.23 * (historical_data ** 3)  # Convert to wind power
   quantile <- 0.9
 } else if (var0 == "pr") {
   metric <- c("cdd", "rx5day")
+  historical_data <- historical_data * 60 * 60 * 24
+  
 }
 base_sd <- base_sd_historical <- base_mean <- list()
 for (m in 1 : length(metric)) {
@@ -128,10 +131,15 @@ for (m in 1 : length(metric)) {
     names(dim(historical_index_standardized)) <- c("lon", "lat", "time")
     metadata <- list(index = list(dim = list(list(name='time', unlim = FALSE, prec='double'))))
     attr(historical_index_standardized, 'variables') <- metadata
+    day <- "01"
+    month <- "-01-"
     time <- as.numeric(base_index$years)
+    time <- as.POSIXct(paste0(time, month, day), tz = "CET")
+    time <- julian(time, origin = as.POSIXct("1970-01-01"))
+    
     attributes(time) <- NULL
     dim(time) <- c(time = length(time))
-    metadata <- list(time = list(standard_name = 'time', long_name = 'time', units = 'years since 0-0-0 00:00:00', prec = 'double', dim = list(list(name='time', unlim = FALSE))))
+    metadata <- list(time = list(standard_name = 'time', long_name = 'time', units = 'days since 1970-01-01 00:00:00', prec = 'double', dim = list(list(name='time', unlim = FALSE))))
     attr(time, "variables") <- metadata
     ArrayToNetCDF(list(index = historical_index_standardized, lat = lat, lon = lon, time = time), 
                   paste0(metric[m], "_",model_names[mod],"_", "historical", "_", start_historical, "_", end_historical, ".nc"))
@@ -141,7 +149,7 @@ for (m in 1 : length(metric)) {
 
 #Compute the time series of the relevant index, using the quantiles and standard deviation from the index
 for (i in 1 : length(fullpath_filenames_projection)) {
-    projection_data <- Start(model = fullpath_filenames_projection[[i]],
+    projection_data <- Start(model = fullpath_filenames_projection[i],
                              var = var0,
                              var_var = 'var_names',
                              time = values(list(as.POSIXct(start_projection), 
@@ -153,9 +161,14 @@ for (i in 1 : length(fullpath_filenames_projection)) {
                              lon_reorder = CircularSort(0, 360),
                              return_vars = list(time = 'model', lon = 'model', lat = 'model'),
                              retrieve = TRUE)
-   
     projection_data <- Subset(projection_data, "lon", lon_order$ix)
     lon <- lon_order$x
+    if (var0 == "pr") {
+      projection_data <- projection_data * 60 * 60 * 24
+    } else if (var0 == "sfcWind") {
+      projection_data <- 0.5 * 1.23 * (projection_data ** 3)
+    }
+    
   for (m in 1 : length(metric)) {
     
     if (var0 != "pr") {
@@ -166,29 +179,36 @@ for (i in 1 : length(fullpath_filenames_projection)) {
       projection_index <- Climdex(data = projection_data, metric = metric[m], 
                                   ncores = detectCores() - 1)
       projection_mean <- InsertDim(base_mean[[m]], 1, dim(projection_index$result)[1])
+      
     }
     
     base_sd_proj <- InsertDim(base_sd[[m]], 1, dim(projection_index$result)[1])
     projection_index_standardized <- (projection_index$result - projection_mean) / base_sd_proj
     for (mod in 1 : dim(projection_data)[model_dim]) {
       projection_index_standardized <- aperm(projection_index_standardized[,mod,1, ,], c(3,2,1))
-      if (max(lon) > 180) {
-        lon_new <- lon
-        lon_new[lon > 180] <- lon[lon < 180] - 360
-         order(projection_index_standardized[lon_new,,])
-      }
       names(dim(projection_index_standardized)) <- c("lon", "lat", "time")
       metadata <- list(index = list(dim = list(list(name='time', unlim = FALSE))))
       attr(projection_index_standardized, 'variables') <- metadata
       time <- as.numeric(projection_index$years)
+      day <- "01"
+      month <- "-01-"
+      time <- as.POSIXct(paste0(time, month, day), tz = "CET")
+      time <- julian(time, origin = as.POSIXct("1970-01-01"))
+      
       attributes(time) <- NULL
       dim(time) <- c(time = length(time))
-      metadata <- list(time = list(standard_name = 'time', long_name = 'time', units = 'years since 0-0-0 00:00:00', prec = 'double', dim = list(list(name='time', unlim = FALSE))))
+      metadata <- list(time = list(standard_name = 'time', long_name = 'time', units = 'days since 1970-01-01 00:00:00', prec = 'double', dim = list(list(name='time', unlim = FALSE))))
       attr(time, "variables") <- metadata
       ArrayToNetCDF(list(metric= projection_index_standardized, time = time,  lat = lat, lon = lon), 
                     paste0(metric[m], "_",model_names[mod],"_", rcp_scenario[i], "_", start_projection, "_", end_projection, ".nc"))
       
-      PlotEquiMap(Mean1Dim(projection_index_standardized, 3), )
+      title <- paste0("Index for  ", metric[m], " ", substr(start_projection, 1, 4), "-", 
+                      substr(end_projection, 1, 4), " ",
+                      " (",rcp_scenario[i], ")") 
+      breaks <- -8 : 8
+      PlotEquiMap(Mean1Dim(projection_index_standardized, 3), lon = lon, lat = lat, filled.continents = FALSE,
+                  toptitle = title, brks = breaks,
+                  fileout = paste0(metric[m], "_",model_names[mod],"_", rcp_scenario[i], "_", start_projection, "_", end_projection, ".pdf"))
       }
   }
     
