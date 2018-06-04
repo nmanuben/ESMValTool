@@ -16,14 +16,27 @@
 #
 # Only the default drs is mandatory, the others are optional
 ###############################################################################
+PRIMAVERA:
+  input_dir: '[expid]/cmorfiles/CMIP/[institute]/[model]/[exp]/[ensemble]/[mip]/[var]/[grid]/[version]'
+  input_file: '[var]_[mip]_[model]_[exp]_[ensemble]_[grid]_*.nc'
+  output_file: '[project]_[model]_[mip]_[exp]_[ensemble]_[field]_[var]_[start_year]-[end_year]'
+  cmor_type: 'CMIP6'
+  cmor_tables: '~/PycharmProjects/earthdiagnostics/earthdiagnostics/cmor_tables/primavera'
+
+CMIP6:
+  input_dir: 'CMIP/[institute]/[model]/[exp]/[ensemble]/[mip]/[var]/[grid]/[version]'
+  input_file: '[var]_[mip]_[model]_[exp]_[ensemble]_[grid]_*.nc'
+  output_file: '[project]_[model]_[mip]_[exp]_[ensemble]_[field]_[var]_[start_year]-[end_year]'
+  cmor_type: 'CMIP6'
 
 CMIP5:
   input_dir:
     default: '/'
     BADC: '[institute]/[model]/[exp]/[freq]/[realm]/[mip]/[ensemble]/latest/[var]'
-    DKRZ: '[institute]/[model]/[exp]/[realm]/[freq]/[mip]/[ensemble]/[latestversion]/[var]'
+    DKRZ: '[institute]/[model]/[exp]/[freq]/[realm]/[mip]/[ensemble]/[latestversion]/[var]'
     ETHZ: '[exp]/[mip]/[var]/[model]/[ensemble]/'
     SMHI: '[model]/[ensemble]/[exp]/[freq]'
+    BSC: '[project]/[exp]/[model]'
   input_file: '[var]_[mip]_[model]_[exp]_[ensemble]_*'
   output_file: '[project]_[model]_[mip]_[exp]_[ensemble]_[field]_[var]_[start_year]-[end_year]'
   institute:
@@ -42,7 +55,7 @@ CMIP5:
     'GISS-E2-R': 'NASA-GISS'
     'GISS-E2-R-CC': 'NASA-GISS'
     'GISS-E2-H-CC': 'NASA-GISS'
-    'GISS-E2-H': ' NASA-GISS'
+    'GISS-E2-H': 'NASA-GISS'
     'CNRM-CM5': 'CNRM-CERFACS'
     'CNRM-CM5-2': 'CNRM-CERFACS'
     'NICAM-09': 'NICAM'
@@ -106,35 +119,44 @@ CMIP5:
 OBS:
   input_dir:
     default: '[tier]/[model]'
-  input_file: '[project]_[model]_[type]_[version]_[field]_[var]_*'
+    BSC: '[type]/[institute]/[model]/[freq_folder]/[var][freq_base]'
+  input_file:
+    default: '[project]_[model]_[type]_[version]_[field]_[var]_*'
+    BSC: '[var]_*.nc'
   output_file: '[project]_[model]_[type]_[version]_[field]_[var]_[start_year]-[end_year]'
+  cmor_type: 'CMIP5'
 
 obs4mips:
   input_dir:
     default: '[tier]/[model]'
   input_file: '[var]_[model]_[level]_[version]_*'
   output_file: '[project]_[model]_[level]_[version]_[field]_[var]_[start_year]-[end_year]'
+  cmor_type: 'CMIP5'
 
 ana4mips:
   input_dir:
     default: '[tier]/[model]'
   input_file: '[var]_[mip]_[type]_[model]_*'
   output_file: '[project]_[mip]_[type]_[model]_[field]_[var]_[start_year]-[end_year]'
+  cmor_type: 'CMIP5'
 
 CCMVal1:
   input_dir:
     default: '[exp]/[model]'
   input_file: '[project]_[exp]_[name]_[ensemble]_[field]_[var]'
   output_file: '[project]_[exp]_[name]_[ensemble]_[field]_[var]_[start_year]-[end_year]'
+  cmor_type: 'CMIP5'
 
 CCMVal2:
   input_dir:
     default: '[exp]/[model]'
   input_file: '[project]_[exp]_[name]_[ensemble]_[field]_[var]'
   output_file: '[project]_[exp]_[name]_[ensemble]_[field]_[var]_[start_year]-[end_year]'
+  cmor_type: 'CMIP5'
 
 EMAC:
   input_dir:
     default: '[model]'
   input_file: ''
   output_file: '[model]_[ensemble]_[field]_[var]_[start_year]-[end_year]'
+  cmor_type: 'CMIP5'
