@@ -167,4 +167,17 @@ for (i in 1 : length(fullpath_filenames_projection_tasmax)){
  
 }
 
-                         
+
+### Plots 
+
+### SON
+#dtr_diff <- Mean1Dim(dtr_indicator$indicator[,3,1,1,,], 1) - Mean1Dim(dtr_indicator_reference$indicator[,3,1,1,,], 1)
+
+#PlotLayout(PlotEquiMap,c(1,2),lon=lon,lat=lat,var=aperm(dtr_all_seasons,c(3,2,1)),
+#           titles=c('DJF', 'MAM', 'JJA', 'SON'), toptitle = "Change in DTR indicator (2020-2040) - (1960-1990)",
+#           filled.continents=F, units = "Days",
+#           axelab=F,draw_separators = T,subsampleg = 1,brks=seq(-16,16,by=2),
+#           bar_extra_labels = c(2,0,0,0),fileout='rcp85.png')
+
+
+

@@ -23,9 +23,9 @@
 ---
 
 models:
-  - {model: IPSL-CM5A-LR,  project: CMIP5,  mip: day,  exp: historical,  ensemble: r1i1p1,  start_year: 1981,  end_year: 2000}
-  - {model: IPSL-CM5A-LR,  project: CMIP5,  mip: day,  exp: rcp85,  ensemble: r1i1p1,  start_year: 2020,  end_year: 2030}
- # - {model: IPSL-CM5A-LR,  project: CMIP5,  mip: day,  exp: rcp26,  ensemble: r1i1p1,  start_year: 2020,  end_year: 2040}
+  - {model: IPSL-CM5A-LR,  project: CMIP5,  mip: daily_mean,  exp: historical,  ensemble: r1i1p1,  start_year: 1960,  end_year: 1990}
+  - {model: IPSL-CM5A-LR,  project: CMIP5,  mip: daily_mean,  exp: rcp85,  ensemble: r1i1p1,  start_year: 2020,  end_year: 2040}
+  - {model: IPSL-CM5A-LR,  project: CMIP5,  mip: daily_mean,  exp: rcp26,  ensemble: r1i1p1,  start_year: 2020,  end_year: 2040}
 
 latlon_roi: (/latmin,latmax,lonmin,lonmax/)
 preprocessors:
@@ -36,25 +36,24 @@ preprocessors:
     mask_fillvalues:
       threshold_fraction: 0.95
     extract_region:
-      long1: 0
+      long1: -10
       long2: 40
-      lat1: 30
-      lat2: 50
-
+      lat1: 27
+      lat2: 70
 
 diagnostics:
   anomaly_agreement:
-    description: Calculate insurance risk indices.
+    description: Calculate heatwaves and coldwaves.
     variables:
       tasmax:
         preprocessor: preproc
         mip: day
         field: T2M
-
     scripts:
       main:
-        script: magic_bsc/insurance_index.r #(in diag_scripts)
+        script: magic_bsc/extreme_spells.r #(in diag_scripts)
 
-        metric: tx90p
-
+        quantile: 0.9    # quantile defining the exceedance/non-exceedance threshold
+        min_duration: 5  # Min duration of a heatwave/coldwave event
+        operator: greaterthan #or lessthan
 

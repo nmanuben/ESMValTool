@@ -7,19 +7,21 @@
 # Authors
 # A Hunter (BSC)
 # N Manubens (BSC)
+#
 # Project
 # KNMI Magic
 #
-# 
-# 
-# 
+#
+#
+#
 #
 # This namelist is part of the ESMValTool
 ###############################################################################
 ---
 
 models:
-  - {model: bcc-csm1-1,  project: CMIP5,  mip: Amon,  exp: rcp85,  ensemble: r1i1p1,  start_year: 2020,  end_year: 2060}
+ # - {model: bcc-csm1-1,  project: CMIP5,  mip: Amon,  exp: rcp85,  ensemble: r1i1p1,  start_year: 2020,  end_year: 2060}
+  - {model: bcc-csm1-1,  project: CMIP5,  mip: Amon,  exp: historical,  ensemble: r1i1p1,  start_year: 2000,  end_year: 2002}
 
 
 preprocessors:
@@ -40,22 +42,25 @@ diagnostics:
         field: T2M
     scripts:
       main:
-        script: combine_indices.R #(in diag_scripts)
-        
-        #Region considered
+        script: magic_bsc/bsc_wp6.r #(in diag_scripts)
+
+        #Region for the area weights, if no weighting is required set all
+        #variables to NULL
         lat_max: 70
         lat_min: 27
         lon_max: 50
         lon_min: 5
 
-        #Start and end periods for the historical and projection periods
-        startdate: "2000-01-01"
-        enddate: "2002-12-01"
-        
-        ## Weights for combining indices - if not NULL, must be the same length as the number of indices
-        weights: 1, 1, 2, 0, 1
-        
-        ### Indices to be combined
-        indices: cdd, rx5day, tx90p, tx10p, wx
 
+        ## Weights for combining indices - if not "equal" or "NULL", must be the same length as the number of indices
+        weights: "equal"
 
+        # Compute running mean?
+        running_mean: 3 #3
+
+        #Or compute seasons? (NOTE: cant compute both running means and seasons):
+        moninf: NULL  # First month
+        monsup: NULL  # Last month
+
+        # Multi-year average?
+        multi_year_average: FALSE
